@@ -1,6 +1,11 @@
 # Expansion-GRR: Efficient Generation of Smooth GRR Roadmaps
+Implementation of our ICRA'23 paper: RangedIK: An Optimization-Based Robot Motion Generation Method for Ranged-Goal Tasks
 
-A Python implementation of **Expansion-GRR**, a method for efficient generation of smooth global
+A Python implementation of our IROS 2024 paper: *Expansion-GRR: Expansion-GRR: Efficient Generation of Smooth Global Redundancy Resolution Roadmaps*
+
+[(TBA) [Paper]()] [[Pre-print](https://arxiv.org/abs/2405.13770)] [(TBA) [Presentation Video]()] [(TBA) [Poster]()]
+
+This is a method for efficient generation of smooth global
 redundancy resolution roadmaps. A teleoperation pipeline utilizing the built roadmaps is also demonstrated in this package.
 
 <img src="demo/cyclic.gif" alt="drawing" width="500"/>
