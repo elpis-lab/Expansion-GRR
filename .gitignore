@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.vscode/
+
+# For evaluation purposes
+graph/*
+!graph/kinova/
+graph/kinova/*
+!graph/kinova/rot_fixed/
+
+experiment/results/*
