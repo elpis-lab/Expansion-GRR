@@ -1,0 +1,28 @@
+### A 5R planar robot ###
+TParent 1 0 0   0 1 0   0 0 1   0 0 0     \
+1 0 0   0 1 0   0 0 1   0.1 0 0    \
+1 0 0   0 1 0   0 0 1   0.1 0 0    \
+1 0 0   0 1 0   0 0 1   0.1 0 0    \
+1 0 0   0 1 0   0 0 1   0.1 0 0    \
+1 0 0   0 1 0   0 0 1   0.1 0 0
+axis    0 0 1   0 0 1   0 0 1   0 0 1   0 0 1   0 0 1
+jointtype   r r r r r r
+qMin    -inf -inf -inf -inf -inf 0
+qMax    inf inf inf inf inf 0
+q   0 0 0 0 0 0
+geometry     "objects/thinshortcube.tri"  "objects/thinshortcube.tri"  "objects/thinshortcube.tri"  "objects/thinshortcube.tri"  "objects/thinshortcube.tri"  ""
+geomscale   1 1 1 1 1 1
+mass    1 1 1 1 1 1
+automass
+torqueMax   1 1 1 1 1 1
+accMax  1 1 1 1 1 1
+velMax  1 1 1 1 1 1
+joint normal 0
+joint normal 1
+joint normal 2
+joint normal 3
+joint normal 4
+joint normal 5
+servoP  50 50 50 50 50 50
+servoI  100 100 100 100 100 100
+servoD  3 3 3 3 3 3
