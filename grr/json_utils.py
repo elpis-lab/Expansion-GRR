@@ -23,7 +23,7 @@ def safe_eval(expr):
 def load_json(robot, json_file):
     """Load json file"""
     # Load json file
-    pardir = os.path.dirname(os.path.dirname(__file__))
+    pardir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with open(
         pardir + "/problems/" + robot + "/" + json_file + ".json", "rb"
     ) as f:

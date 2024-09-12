@@ -66,7 +66,7 @@ def quaternion_angle(q1, q2):
     """
     # Cos distance
     dist = np.min([np.abs(np.dot(q1, q2)), 1.0])  # prevent numerical error
-    angle = 2 * np.arccos(np.abs(dist))
+    angle = 2 * np.arccos(dist)
     return angle
 
 

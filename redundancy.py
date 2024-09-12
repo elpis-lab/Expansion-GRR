@@ -11,7 +11,7 @@ from grr.resolution import RedundancyResolution
 from experiment.roadmap_quality import evaluate_roadmap
 
 
-def main(opts):
+def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
     """Run global redundancy resolution"""
     RobotClass = getattr(sys.modules[__name__], opts["robot_class"])
     robot = RobotClass(
@@ -32,31 +32,36 @@ def main(opts):
     resolution = RedundancyResolution(robot)
 
     # Build workspace graph
-    resolution.sample_workspace(
-        n_pos_points=opts["number_of_position_points"],
-        n_rot_points=opts["number_of_rotation_points"],
-        sampling_method="grid",
-    )
-    resolution.save_workspace_graph(
-        graph_folder + "graph_workspace.pickle",
-        graph_folder + "nn_workspace.pickle",
-    )
-    # resolution.load_workspace_graph(
-    #     graph_folder + "graph_workspace.pickle",
-    #     graph_folder + "nn_workspace.pickle",
-    # )
+    if not load_existed_ws_graph:
+        resolution.sample_workspace(
+            n_pos_points=opts["number_of_position_points"],
+            n_rot_points=opts["number_of_rotation_points"],
+            sampling_method="grid",
+        )
+        resolution.save_workspace_graph(
+            graph_folder + "graph_workspace.pickle",
+            graph_folder + "nn_workspace.pickle",
+        )
+    else:
+        resolution.load_workspace_graph(
+            graph_folder + "graph_workspace.pickle",
+            graph_folder + "nn_workspace.pickle",
+        )
     # resolution.visualize_workspace_graph()
 
     # Timer
     start_time = time.time()
 
     # Build configuration space graph
-    resolution.global_expansion(opts["init_configs"])
-    resolution.save_solver_graph(graph_folder + "graph_solver.pickle")
-    # resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
+    if not load_existed_solver_graph:
+        resolution.global_expansion(opts["init_configs"])
+        resolution.save_solver_graph(graph_folder + "graph_solver.pickle")
+    else:
+        resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
 
+    # Optimization
+    resolution.fix_boundary(n_neighbor_layer=1, n_iter=2)
     # TODO Future Improvement
-    resolution.fix_boundary(n_neighbor_layer=1, n_iter=5)
     # resolution.optimize_resolution(n_length_optimization=2)
 
     # Timer
@@ -92,4 +97,4 @@ if __name__ == "__main__":
         json_file_name = sys.argv[2]
 
     opts = load_json(robot_name, json_file_name)
-    main(opts)
+    main(opts, False, False)

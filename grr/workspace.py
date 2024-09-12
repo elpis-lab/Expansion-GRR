@@ -9,9 +9,9 @@ from pynndescent import NNDescent
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from grr.utils import se3_metric
-from grr.utils import get_staggered_grid, get_so3_grid
-from grr.utils import quat_to_euler, rotvec_to_quat, quat_to_rotvec
+from .utils import se3_metric
+from .utils import get_staggered_grid, get_so3_grid
+from .utils import quat_to_euler, rotvec_to_quat, quat_to_rotvec
 
 
 class RedundancyWorkspace:
@@ -221,10 +221,10 @@ class RedundancyWorkspace:
                 # 2, rotation neighbors with the same position (2 / 6)
                 combined_edges = []
                 for i, j in edges:
-                    for r in range(n_rot_points):
+                    for r in range(len(rotation_points)):
                         combined_edges.append((nodes[(i, r)], nodes[(j, r)]))
                 for i, j in rotation_eges:
-                    for p in range(n_pos_points):
+                    for p in range(len(points)):
                         combined_edges.append((nodes[(p, i)], nodes[(p, j)]))
 
                 # add edges

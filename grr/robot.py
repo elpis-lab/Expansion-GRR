@@ -7,11 +7,11 @@ import numpy as np
 import klampt
 from klampt.model import ik, collide
 
-from grr.utils import se3_distance
-from grr.utils import wrap_to_pi, interpolate_angle
-from grr.utils import sample_quat, interpolate_quat
-from grr.utils import euler_to_quat, euler_to_matrix
-from grr.utils import quat_to_matrix, matrix_to_quat
+from .utils import se3_distance
+from .utils import wrap_to_pi, interpolate_angle
+from .utils import sample_quat, interpolate_quat
+from .utils import euler_to_quat, euler_to_matrix
+from .utils import quat_to_matrix, matrix_to_quat
 
 
 class Robot:
@@ -36,7 +36,7 @@ class Robot:
         """
         self.name = name
         self.world = klampt.WorldModel()
-        pardir = os.path.dirname(os.path.dirname(__file__))
+        pardir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.world.loadElement(pardir + "/data/robots/" + name + ".rob")
         self.robot = self.world.robot(0)
 
@@ -56,16 +56,24 @@ class Robot:
             self.rotation = "free"
             self.fixed_rotation = None
 
+        # Initialize the robot attributes
+        # This can be customized for different robots
         joint_limits = np.array(self.robot.getJointLimits()).T
-        self.active_joints = self.get_active_joints(joint_limits)
+        active_joints = self.get_active_joints(joint_limits)
+        self.init_attributes(active_joints)
+        # assume the last joint of the robot
+        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
+
+    def init_attributes(self, active_joints):
+        """Initialize the attributes"""
+        self.active_joints = active_joints
+
+        joint_limits = np.array(self.robot.getJointLimits()).T
         self.joint_limits = joint_limits[self.active_joints]
         self.num_joints = len(self.active_joints)
         self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
-
         # get only the active ones
         self.links = [self.robot.link(i) for i in self.active_joints]
-        # assume the last joint of the robot
-        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
 
     def get_active_joints(self, limits):
         """Return the active joint (non-fixed joints)"""
@@ -303,15 +311,8 @@ class Kinova(Robot):
         super().__init__(name, domain, rot_domain, fixed_rotation)
 
         # The active joints are the [1, 2, 3, 4, 5, 6, 7] joints
-        self.active_joints = [1, 2, 3, 4, 5, 6, 7]
-        joint_limits = np.array(self.robot.getJointLimits()).T
-        self.joint_limits = joint_limits[self.active_joints]
-        self.num_joints = len(self.active_joints)
-        self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
-
-        # get only the active ones
-        self.links = [self.robot.link(i) for i in self.active_joints]
-        # assume the last joint of the robot
+        active_joints = [1, 2, 3, 4, 5, 6, 7]
+        self.init_attributes(active_joints)
         self.robot_ee = self.robot.link("Tool_Frame")
 
         # Get robot geometry for collision detection

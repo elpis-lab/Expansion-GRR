@@ -4,9 +4,9 @@ import pickle
 import numpy as np
 import networkx as nx
 
-from grr.workspace import RedundancyWorkspace
-from grr.solver import RedundancySolver
-from grr.utils import wrap_to_pi
+from .workspace import RedundancyWorkspace
+from .solver import RedundancySolver
+from .utils import wrap_to_pi
 
 
 class RedundancyResolution:
