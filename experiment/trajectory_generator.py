@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from grr.utils import rotvec_to_quat, quat_to_matrix, interpolate_quat
 from grr.json_utils import load_json
-from grr.robot import KinematicChain, Kinova
+from grr.robot import KinematicChain, Kinova, UR10
 
 from experiment.utils import random_unit_vector
 
