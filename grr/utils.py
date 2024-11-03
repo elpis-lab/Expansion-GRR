@@ -70,6 +70,11 @@ def quaternion_angle(q1, q2):
     return angle
 
 
+def quaternion_close(q1, q2, eps=1e-3):
+    """Check if two quaternions are close to each other"""
+    return quaternion_angle(q1, q2) < eps
+
+
 def interpolate_quat(quat1, quat2, u):
     """Interpolate between two rotation vectors given a ratio"""
     quat1 = R.from_quat(quat1).as_quat()
@@ -251,7 +256,7 @@ def get_staggered_grid(n_points, domain):
     return np.array(points), np.array(edges)
 
 
-def get_so3_grid(n_points, domain, num_neighbors):
+def get_so3_grid(n_points, rot_domain, fixed_rotation, num_neighbors):
     """Get n_points in SO(3) points using uniform sampling (non-random)
 
     For one dimension, simply sample n_points in the range of [-pi, pi)
@@ -259,20 +264,24 @@ def get_so3_grid(n_points, domain, num_neighbors):
 
     Args:
         n_points: number of points to sample
-        domain: domain of the rotation to sample, unlike R^3,
-                the domain simply include 1 or 0, indicating
-                whether the rotation is allowed to rotate around
+        rot_domain: rot_domain of the rotation to sample, unlike R^3,
+                    the rot_domain simply include 1 or 0, indicating
+                    whether the rotation is allowed to rotate around
+        fixed_rotation: defined in euler angle form (x, y, z)
+                        the fixed rotation for the robot, when the rot_domain
+                        is not [1, 1, 1], the "0" part of the rotation would be
+                        assigned with the fixed rotation
         num_neighbors: number of neighbors for each point
     Returns:
         points: a list of workspace points (coordinates)
         edges: a list of edges in index form
     """
     # Keep a record of the domain that is constant
-    num_domian = np.sum(domain)
+    num_domian = np.sum(rot_domain)
 
     # None: no domain is specified, return None
     if num_domian == 0:
-        return None
+        raise ValueError("No domain is specified for rotation grid")
 
     # Only one angle:
     # simply sample uniformly from -pi to pi, make other angles 0,
@@ -283,8 +292,8 @@ def get_so3_grid(n_points, domain, num_neighbors):
         angles = np.linspace(-np.pi, np.pi, n_points, endpoint=False)
 
         # create the points with zero for other angles
-        eulers = np.zeros((n_points, 3))
-        index = domain.index(1)
+        eulers = np.tile(fixed_rotation, (n_points, 1))
+        index = rot_domain.index(1)
         eulers[:, index] = angles
         quats = [euler_to_quat(euler) for euler in eulers]
 
@@ -320,10 +329,10 @@ def get_so3_grid(n_points, domain, num_neighbors):
             quats.append(q)
 
     # Find the edges
-    # build a temp ball tree for even_quats
+    # build a temp NN structure for quats
     tree = BallTree(quats, metric=quaternion_angle)
     edges = []
-    # + 1 avoid self
+    # + 1 to accomodate self
     neighbors = tree.query(quats, num_neighbors + 1)[1][:, 1:]
     for i, neighbor in enumerate(neighbors):
         for j in neighbor:

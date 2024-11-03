@@ -5,7 +5,7 @@ import sys
 import time
 
 from grr.json_utils import load_json
-from grr.robot import KinematicChain, Kinova
+from grr.robot import KinematicChain, Kinova, UR10
 from grr.resolution import RedundancyResolution
 
 from experiment.roadmap_quality import evaluate_roadmap
@@ -85,7 +85,7 @@ def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
 
 if __name__ == "__main__":
     # Default json file
-    robot_name = "planar_5"
+    robot_name = "ur10"
     json_file_name = "rot_free"
 
     # Override with system arguments if provided

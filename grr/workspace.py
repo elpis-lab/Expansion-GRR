@@ -191,7 +191,8 @@ class RedundancyWorkspace:
                 n_rot_neighbors = self.rot_dims * 2
                 rotation_points, rotation_eges = get_so3_grid(
                     n_rot_points,
-                    domain=self.robot.rot_domain,
+                    self.robot.rot_domain,
+                    quat_to_euler(self.robot.fixed_rotation),
                     num_neighbors=n_rot_neighbors,
                 )
 
