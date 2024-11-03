@@ -25,6 +25,8 @@ Python3.8+ with extra packages
 pip install -r requirements.txt
 ```
 
+If you can not load the provided graphs (caused by **networkx** or **numba** version mismatch), you may simply regenerate the graph from your end.
+
 ## Build GRR Roadmaps
 
 To build a GRR roadmap for a robot
