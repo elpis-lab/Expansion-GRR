@@ -58,24 +58,16 @@ class Robot:
         else:
             self.rotation = "free"
 
-        # Initialize the robot attributes
-        # This can be customized for different robots
         joint_limits = np.array(self.robot.getJointLimits()).T
-        active_joints = self.get_active_joints(joint_limits)
-        self.init_attributes(active_joints)
-        # assume the last joint of the robot
-        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
-
-    def init_attributes(self, active_joints):
-        """Initialize the attributes"""
-        self.active_joints = active_joints
-
-        joint_limits = np.array(self.robot.getJointLimits()).T
+        self.active_joints = self.get_active_joints(joint_limits)
         self.joint_limits = joint_limits[self.active_joints]
         self.num_joints = len(self.active_joints)
         self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
         # get only the active ones
         self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
+        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
 
     def get_active_joints(self, limits):
         """Return the active joint (non-fixed joints)"""
@@ -317,8 +309,15 @@ class Kinova(Robot):
         super().__init__(name, domain, rot_domain, fixed_rotation)
 
         # The active joints are the [1, 2, 3, 4, 5, 6, 7] joints
-        active_joints = [1, 2, 3, 4, 5, 6, 7]
-        self.init_attributes(active_joints)
+        self.active_joints = [1, 2, 3, 4, 5, 6, 7]
+        joint_limits = np.array(self.robot.getJointLimits()).T
+        self.joint_limits = joint_limits[self.active_joints]
+        self.num_joints = len(self.active_joints)
+        self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
+        # get only the active ones
+        self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
         self.robot_ee = self.robot.link("Tool_Frame")
 
         # Get robot geometry for collision detection
@@ -384,8 +383,15 @@ class UR10(Robot):
         super().__init__(name, domain, rot_domain, fixed_rotation)
 
         # The active joints are the [1, 2, 3, 4, 5, 6] joints
-        active_joints = [1, 2, 3, 4, 5, 6]
-        self.init_attributes(active_joints)
+        self.active_joints = [1, 2, 3, 4, 5, 6]
+        joint_limits = np.array(self.robot.getJointLimits()).T
+        self.joint_limits = joint_limits[self.active_joints]
+        self.num_joints = len(self.active_joints)
+        self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
+        # get only the active ones
+        self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
         self.robot_ee = self.robot.link("ee_link")
 
         # Get robot geometry for collision detection
