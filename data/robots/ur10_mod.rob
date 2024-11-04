@@ -27,9 +27,9 @@ Tparent	1 0 0	0 1 0	0 0 1	0 0 0 \
 
 q	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
-qmin	0 -inf -3.14159 -3.14159 -3.14159 -3.14159 -inf 0 0 0 0 0 0 0 0 0 0 0 
+qmin	0 -6.28319 -6.28319 -3.14159 -6.28319 -6.28319 -6.28319 0 0 0 0 0 0 0 0 0 0 0 
 
-qmax	0 inf 3.14159 3.14159 3.14159 3.14159 inf 0 0 0 0 0 0 0 0.053 0 0.053 0 
+qmax	0 6.28319 6.28319 3.14159 6.28319 6.28319 6.28319 0 0 0 0 0 0 0 0.053 0 0.053 0 
 
 geometry	"ur10/base_link.off" "ur10/shoulder_link.off" "ur10/upper_arm_link.off" "ur10/forearm_link.off" "ur10/wrist_1_link.off" "ur10/wrist_2_link.off" "ur10/wrist_3_link.off" "" "robotis_rh_p12_rn/rh_p12_rn_base.off" "" "realsense/d435_link.off" "" "" "" "robotis_rh_p12_rn/rh_p12_rn_l1.off" "robotis_rh_p12_rn/rh_p12_rn_l2.off" "robotis_rh_p12_rn/rh_p12_rn_r1.off" "robotis_rh_p12_rn/rh_p12_rn_r2.off" 
 

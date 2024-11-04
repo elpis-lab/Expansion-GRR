@@ -3,10 +3,10 @@
 import os
 import numpy as np
 
-from ..grr.utils import se3_distance
-from ..grr.utils import wrap_to_pi, interpolate_angle
-from ..grr.utils import sample_quat, interpolate_quat
-from ..grr.utils import euler_to_quat, quat_to_euler
+from grr.utils import se3_distance
+from grr.utils import wrap_to_pi, interpolate_angle
+from grr.utils import sample_quat, interpolate_quat
+from grr.utils import euler_to_quat, quat_to_euler
 
 import pybullet as p
 

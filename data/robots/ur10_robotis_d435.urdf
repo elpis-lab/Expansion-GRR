@@ -17,7 +17,7 @@
   <link name="base_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/base.dae"/>
+        <mesh filename="package://ur10/ur10/visual/base.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -25,7 +25,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/base.stl"/>
+        <mesh filename="package://ur10/ur10/collision/base.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -45,7 +45,7 @@
   <link name="shoulder_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/shoulder.dae"/>
+        <mesh filename="package://ur10/ur10/visual/shoulder.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -53,7 +53,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/shoulder.stl"/>
+        <mesh filename="package://ur10/ur10/collision/shoulder.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -73,7 +73,7 @@
   <link name="upper_arm_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/upperarm.dae"/>
+        <mesh filename="package://ur10/ur10/visual/upperarm.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -81,7 +81,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/upperarm.stl"/>
+        <mesh filename="package://ur10/ur10/collision/upperarm.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -101,7 +101,7 @@
   <link name="forearm_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/forearm.dae"/>
+        <mesh filename="package://ur10/ur10/visual/forearm.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -109,7 +109,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/forearm.stl"/>
+        <mesh filename="package://ur10/ur10/collision/forearm.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -129,7 +129,7 @@
   <link name="wrist_1_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/wrist1.dae"/>
+        <mesh filename="package://ur10/ur10/visual/wrist1.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -137,7 +137,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/wrist1.stl"/>
+        <mesh filename="package://ur10/ur10/collision/wrist1.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -157,7 +157,7 @@
   <link name="wrist_2_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/wrist2.dae"/>
+        <mesh filename="package://ur10/ur10/visual/wrist2.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -165,7 +165,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/wrist2.stl"/>
+        <mesh filename="package://ur10/ur10/collision/wrist2.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -185,7 +185,7 @@
   <link name="wrist_3_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur10/visual/wrist3.dae"/>
+        <mesh filename="package://ur10/ur10/visual/wrist3.dae"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -193,7 +193,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur10/collision/wrist3.stl"/>
+        <mesh filename="package://ur10/ur10/collision/wrist3.stl"/>
       </geometry>
     </collision>
     <inertial>
@@ -320,13 +320,13 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/collision/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/collision/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/visual/base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/visual/base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -377,13 +377,13 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/collision/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/collision/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/visual/r1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/visual/r1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -432,13 +432,13 @@
     <collision>
       <origin xyz="0 0 0.012" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/collision/r2.stl" scale="0.001 0.001 0.0015"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/collision/r2.stl" scale="0.001 0.001 0.0015"/>
       </geometry>
     </collision>
     <visual>
       <origin xyz="0 0 0.012" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/visual/r2.stl" scale="0.001 0.001 0.0015"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/visual/r2.stl" scale="0.001 0.001 0.0015"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -498,13 +498,13 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/collision/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/collision/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/visual/l1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/visual/l1.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -553,13 +553,13 @@
     <collision>
       <origin xyz="0 0 0.012" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/collision/l2.stl" scale="0.001 0.001 0.0015"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/collision/l2.stl" scale="0.001 0.001 0.0015"/>
       </geometry>
     </collision>
     <visual>
       <origin xyz="0 0 0.012" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://robotis_rh_p12_rn/visual/l2.stl" scale="0.001 0.001 0.0015"/>
+        <mesh filename="package://ur10/robotis_rh_p12_rn/visual/l2.stl" scale="0.001 0.001 0.0015"/>
       </geometry>
       <material name="grey"/>
     </visual>
@@ -621,7 +621,7 @@
     <visual>
       <origin rpy="1.5707963267948966 0 1.5707963267948966" xyz="0.0149 -0.0175 0"/>
       <geometry>
-        <mesh filename="package://realsense2/visual/d435.dae"/>
+        <mesh filename="package://ur10/realsense2/visual/d435.dae"/>
       </geometry>
       <material name="aluminum"/>
     </visual>
