@@ -7,13 +7,15 @@ from grr.json_utils import load_json
 from bullet_api.robot import KinematicChain, Kinova, UR10
 
 
-def load_grr(robot_urdf, robot_name, roadmap_type):
+def load_grr(robot_name, roadmap_type):
     # Dictionary mapping for robot classes
     robot_classes = {
         "KinematicChain": KinematicChain,
         "Kinova": Kinova,
         "UR10": UR10,
     }
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    urdf = os.path.join(root_dir, "data", "robots", robot_name + ".urdf")
 
     # Load GRR
     opts = load_json(robot_name, roadmap_type)
@@ -21,7 +23,7 @@ def load_grr(robot_urdf, robot_name, roadmap_type):
     # grr robot
     RobotClass = robot_classes[opts["robot_class"]]
     grr_robot = RobotClass(
-        robot_urdf,
+        urdf,
         opts["domain"],
         opts["rotation_domain"],
         opts["fixed_rotation"],
