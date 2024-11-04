@@ -8,19 +8,19 @@ from bullet_api.loader import load_grr
 def main():
     """Build a demo"""
     # Load a GRR resolution
+    dir = os.path.dirname(os.path.abspath(__file__))
     grr = load_grr(
-        "data/robots/ur10_robotis_d435.urdf",
+        dir + "/data/robots/ur10_bullet.urdf",
         "ur10",
         "rot_variable_yaw",
     )
 
-    print(grr.solve([0.5, 0, 0, 0, 0, 0, 1], none_on_fail=True))
-
     # TODO for the users
     # Define workspace path in the robot base frame
     workspace_path = [
-        ([0.5, -0.3, 0.05], [0.71, 0.71, 0, 0]),
-        ([0.5, -0.7, 0.05], [0.7071068, 0.7071068, 0, 0]),
+        ([0.5, -0.25, 0.05], [0.7071068, 0.7071068, 0, 0]),
+        ([0.5, 0.0, 0.05], [0.7071068, 0.7071068, 0, 0]),
+        ([0.5, 0.25, 0.05], [0.7071068, 0.7071068, 0, 0]),
     ]
 
     # Solve the Cartesian path with GRR
@@ -38,18 +38,20 @@ def main():
 def grr_plan(grr, workspace_path):
     """Plan pushing with GRR"""
     config_path = [
-        grr.solve(np.array([0.5, 0, 0, 0, 0, 0, 1]), none_on_fail=True)
+        grr.solve(waypoint[0] + waypoint[1], none_on_fail=True)
         for waypoint in workspace_path
     ]
 
-    print(workspace_path[0][0] + workspace_path[0][1])
-    print(config_path)
+    # # Debug
+    # for config in config_path:
+    #     print(config)
 
+    # TODO 0
     # Valid solution check
     for conf in config_path:
         if conf is None:
             print("\nInvalid configuration found\n")
-            return None
+            return config_path
 
     # TODO 1
     # Collision checking with obstacles is not implimented
