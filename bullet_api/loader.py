@@ -4,7 +4,7 @@ import os
 
 from grr.resolution import RedundancyResolution
 from grr.json_utils import load_json
-from .robot import KinematicChain, Kinova, UR10
+from bullet_api.robot import KinematicChain, Kinova, UR10
 
 
 def load_grr(robot_urdf, robot_name, roadmap_type):

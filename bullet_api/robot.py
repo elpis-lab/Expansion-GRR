@@ -1,6 +1,5 @@
 """Module providing a class that defines a robot"""
 
-import os
 import numpy as np
 
 from grr.utils import se3_distance
