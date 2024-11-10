@@ -28,7 +28,7 @@ class NearestNeighbors(ABC):
         self.dist_fn = dist_fn
 
     @abstractmethod
-    def report_sorted_results(self):
+    def report_sorted_results(self) -> bool:
         pass
 
     @abstractmethod
@@ -48,19 +48,19 @@ class NearestNeighbors(ABC):
         pass
 
     @abstractmethod
-    def nearest(self, data: object):
+    def nearest(self, data: object) -> object:
         pass
 
     @abstractmethod
-    def nearest_k(self, data: object, k: int):
+    def nearest_k(self, data: object, k: int) -> List[object]:
         pass
 
     @abstractmethod
-    def nearest_r(self, data: object, radius: float):
+    def nearest_r(self, data: object, radius: float) -> List[object]:
         pass
 
     @abstractmethod
-    def size(self):
+    def size(self) -> int:
         pass
 
     @abstractmethod
@@ -77,7 +77,9 @@ class GreedyKCenters:
     ):
         self.dist_fn = dist_fn
 
-    def kcenters(self, data_list: List[object], k: int) -> NDArray:
+    def kcenters(
+        self, data_list: List[object], k: int
+    ) -> Tuple[List[int], NDArray]:
         # array containing the minimum distance between each data point
         # and the centers computed so far
         min_dist = [float("inf")] * len(data_list)

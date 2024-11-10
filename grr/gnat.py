@@ -10,9 +10,8 @@ and is not yet optimized for Python.
 import sys
 import random
 import heapq
-from typing import List, Tuple, Callable
-from __main__ import GNAT, GNATNode
-
+import numpy as np
+from typing import List, Tuple, Callable, Hashable
 from .nearest_neighbors import NearestNeighbors, GreedyKCenters
 
 
@@ -36,7 +35,7 @@ class GNAT(NearestNeighbors):
         self.min_degree = min(degree, min_degree)
         self.max_degree = max(max_degree, degree)
         self.max_num_pts_per_leaf = max_num_pts_per_leaf
-        self.size = 0
+        self.data_size = 0
         self.rebuild_size = (
             max_num_pts_per_leaf * degree if rebalancing else sys.maxsize
         )
@@ -60,15 +59,18 @@ class GNAT(NearestNeighbors):
     def clear(self):
         if self.tree:
             self.tree = None
-        self.size = 0
+        self.data_size = 0
         self.removed.clear()
         if self.rebuild_size != sys.maxsize:
             self.rebuild_size = self.max_num_pts_per_leaf * self.degree
 
-    def reports_sorted_results(self) -> bool:
+    def report_sorted_results(self) -> bool:
         return True
 
     def add(self, data: object):
+        if not isinstance(data, Hashable):
+            raise Exception("Input data must be hashable")
+
         if self.tree:
             if self.is_removed(data):
                 self.rebuild_data_structure()
@@ -77,13 +79,16 @@ class GNAT(NearestNeighbors):
             self.tree = GNATNode(
                 self.degree, self.max_num_pts_per_leaf, data, self.gnat_sampler
             )
-            self.size = 1
+            self.data_size = 1
 
     def add_list(self, data_list: List[object]):
+        if not isinstance(data_list[0], Hashable):
+            raise Exception("Input data must be hashable")
+
         if self.tree:
             super().add_list(data_list)
 
-        elif data_list:
+        elif len(data_list) != 0:
             self.tree = GNATNode(
                 self.degree,
                 self.max_num_pts_per_leaf,
@@ -95,7 +100,7 @@ class GNAT(NearestNeighbors):
                 self.tree.sub_tree_size = len(data_list)
 
             self.tree.data.extend(data_list[1:])
-            self.size += len(data_list)
+            self.data_size += len(data_list)
             if self.tree.need_to_split(self):
                 self.tree.split(self)
 
@@ -105,9 +110,8 @@ class GNAT(NearestNeighbors):
         self.clear()
         self.add_list(data_list)
 
-    # TODO
     def remove(self, data: object):
-        if self.size == 0:
+        if self.data_size == 0:
             return False
 
         # find data in tree
@@ -118,16 +122,16 @@ class GNAT(NearestNeighbors):
         if d != data:
             return False
         self.removed.add(d)
-        self.size -= 1
+        self.data_size -= 1
 
         # if we removed a pivot or if the capacity of removed elements
         # has been reached, we rebuild the entire GNAT
-        if is_pivot[0] or len(self.removed) >= self.removed_cache_size:
+        if is_pivot or len(self.removed) >= self.removed_cache_size:
             self.rebuild_data_structure()
         return True
 
-    def nearest(self, data):
-        if self.size:
+    def nearest(self, data) -> object:
+        if self.data_size:
             is_pivot, nbh_queue = self.nearest_k_internal(data, 1)
             if nbh_queue:
                 return nbh_queue[0][1]
@@ -135,28 +139,27 @@ class GNAT(NearestNeighbors):
             "No elements found in nearest neighbors data structure"
         )
 
-    def nearest_k(self, data, k):
+    def nearest_k(self, data, k) -> List[object]:
         nbh = []
         if k == 0:
             return nbh
-        if self.size:
+        if self.data_size:
             is_pivot, nbh_queue = self.nearest_k_internal(data, k)
             nbh = self.postprocess_nearest(nbh_queue)
         return nbh
 
     def nearest_r(self, data, radius) -> List[object]:
         nbh = []
-        if self.size:
-            nbh_queue = []
+        if self.data_size:
             nbh_queue = self.nearest_r_internal(data, radius)
             nbh = self.postprocess_nearest(nbh_queue)
         return nbh
 
     def size(self) -> int:
-        return self.size
+        return self.data_size
 
     def sample(self) -> object:
-        if not self.size():
+        if not self.data_size():
             raise Exception("Cannot sample from an empty tree")
         else:
             return self.tree.sample(self)
@@ -180,7 +183,9 @@ class GNAT(NearestNeighbors):
         )
 
         node_queue = []
-        self.tree.nearest_k(self, data, k, nbh_queue, node_queue, is_pivot)
+        is_pivot = self.tree.nearest_k(
+            self, data, k, nbh_queue, node_queue, is_pivot
+        )
         while node_queue:
             dist = -nbh_queue[0][0]  # Max-heap
             node_dist = heapq.heappop(node_queue)
@@ -191,7 +196,9 @@ class GNAT(NearestNeighbors):
                 or dist_to_pivot < node.min_radius - dist
             ):
                 continue
-            node.nearest_k(self, data, k, nbh_queue, node_queue, is_pivot)
+            is_pivot = node.nearest_k(
+                self, data, k, nbh_queue, node_queue, is_pivot
+            )
         return is_pivot, nbh_queue
 
     def nearest_r_internal(
@@ -221,12 +228,11 @@ class GNAT(NearestNeighbors):
 
         return nbh_queue
 
-    # TODO
-    def postprocess_nearest(self, nbh_queue):
+    def postprocess_nearest(self, nbh_queue: List[object]) -> List[object]:
         nbh = []
         while nbh_queue:
             nbh.append(heapq.heappop(nbh_queue)[1])
-        nbh.reverse()
+        nbh.reverse()  # in ascending order
         return nbh
 
 
@@ -280,11 +286,11 @@ class GNATNode:
 
         if len(self.children) == 0:
             self.data.append(data)
-            gnat.size += 1
+            gnat.data_size += 1
             if self.need_to_split(gnat):
                 if len(gnat.removed) > 0:
                     gnat.rebuild_data_structure()
-                elif gnat.size >= gnat.rebuild_size:
+                elif gnat.data_size >= gnat.rebuild_size:
                     gnat.rebuild_size *= 2
                     gnat.rebuild_data_structure()
                 else:
@@ -296,8 +302,8 @@ class GNATNode:
             min_index = 0
 
             for i in range(1, len(self.children)):
-                dist[i] = gnat.dist_fn(data, self.children[i].pivot_)
-                if dist[i] < self.min_range[min_index]:
+                dist[i] = gnat.dist_fn(data, self.children[i].pivot)
+                if dist[i] < min_dist:
                     min_dist = dist[i]
                     min_index = i
             for i in range(len(self.children)):
@@ -305,18 +311,14 @@ class GNATNode:
             self.children[min_index].update_radius(min_dist)
             self.children[min_index].add(gnat, data)
 
-    def need_to_split(self, gnat) -> bool:
-        gnat: GNAT
-
+    def need_to_split(self, gnat: GNAT) -> bool:
         sz = len(self.data)
         return sz > gnat.max_num_pts_per_leaf and sz > self.degree
 
-    def split(self, gnat):
+    def split(self, gnat: GNAT):
         self.children = []
 
-        pivots, dists = gnat.pivot_selector.kcenters(
-            self.data, self.degree, pivots
-        )
+        pivots, dists = gnat.pivot_selector.kcenters(self.data, self.degree)
         for pivot in pivots:
             child_node = GNATNode(
                 self.degree,
@@ -389,9 +391,9 @@ class GNATNode:
         data: object,
         k: int,
         nbh: List[Tuple[float, object]],  # max heap
-        node_queue: List[Tuple[float, GNATNode, float]],  # max heap
+        node_queue: List[Tuple[float, "GNATNode", float]],  # max heap
         is_pivot: bool,
-    ):
+    ) -> bool:
         for d in self.data:
             if not gnat.is_removed(d):
                 if self.insert_neighbor_k(
@@ -400,7 +402,7 @@ class GNATNode:
                     is_pivot = False
 
         if len(self.children) <= 0:
-            return
+            return is_pivot
 
         sz = len(self.children)
         offset = gnat.offset
@@ -419,7 +421,7 @@ class GNATNode:
             if self.insert_neighbor_k(
                 nbh, k, child.pivot, data, dist_to_pivot[p_i]
             ):
-                is_pivot[0] = True
+                is_pivot = True
 
             if len(nbh) == k:
                 dist = -nbh[0][0]  # from a max-heap
@@ -447,6 +449,8 @@ class GNATNode:
                     node_queue, (-metric, child, dist_to_pivot[p])
                 )  # max heap
 
+        return is_pivot
+
     def insert_neighbor_r(
         self,
         nbh: List[Tuple[float, object]],
@@ -463,7 +467,7 @@ class GNATNode:
         data: object,
         r: float,
         nbh: List[Tuple[float, object]],  # max heap
-        node_queue: List[Tuple[float, GNATNode, float]],  # max heap
+        node_queue: List[Tuple[float, "GNATNode", float]],  # max heap
     ):
         dist = r
         for d in self.data:
@@ -549,3 +553,100 @@ class GNATNode:
                 return self.pivot
             else:
                 return self.data[i]
+
+
+if __name__ == "__main__":
+    import time
+    import math
+    from sklearn.neighbors import BallTree
+    from scipy.spatial.transform import Rotation as R
+    from .utils import se3_distance
+
+    random.seed(42)
+    np.random.seed(42)
+
+    # Try to test accuracy and performance by comparing with Sklearn's BallTree
+
+    # Define a simple distance function for SE3 points
+    def euclidean_distance(p1, p2, w=1.0):
+        # p_diff = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+        # q_diff = abs((p1[2] - p2[2] + np.pi) % (2 * np.pi) - np.pi)
+        # return p_diff + w * q_diff
+
+        d_position = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+        d_rotation = 1 - np.abs(np.dot(p1[3:7], p2[3:7]))
+        return d_position + w * d_rotation
+
+    # Create a set of random 2D points
+    data_points = [
+        (
+            random.uniform(0, 100),
+            random.uniform(0, 100),
+            random.uniform(0, 100),
+            *R.random().as_quat(),
+        )
+        for _ in range(1000000)
+    ]
+
+    # Initialize GNAT
+    start_time = time.time()
+    gnat = GNAT()
+    gnat.set_distance_function(euclidean_distance)
+    # Add points to GNAT
+    gnat.add_list(data_points)
+    build_time = time.time() - start_time
+    print(f"Build time: {build_time:.6f} seconds")
+
+    # Test nearest neighbor search
+    query_point = (50, 50, 50, 0, 0, 0, 1)
+    nearest = gnat.nearest(query_point)
+    print(f"Nearest neighbor to {query_point} is {nearest}")
+
+    # Test k-nearest neighbors search
+    start_time = time.time()
+    k = 5
+    nearest_k = gnat.nearest_k(query_point, k)
+    search_time = time.time() - start_time
+    print(f"Nearest neighbor search time: {search_time:.6f} seconds")
+    print(f"{k} nearest neighbors to {query_point} are:")
+    for neighbor in nearest_k:
+        print(neighbor)
+
+    # # Test range search
+    # radius = 1
+    # nearest_r = gnat.nearest_r(query_point, radius)
+    # print(f"Neighbors within radius {radius} of {query_point} are:")
+    # for neighbor in nearest_r:
+    #     print(neighbor)
+
+    # See the Balltree results for comparison
+    print("\nBallTree")
+    start_time = time.time()
+    ball_tree = BallTree(data_points, metric=euclidean_distance)
+    build_time = time.time() - start_time
+    print(f"Build time: {build_time:.6f} seconds")
+
+    # Convert query point to numpy array
+    query_array = np.array([query_point])
+
+    # Use BallTree to find the nearest neighbor
+    distances, indices = ball_tree.query(query_array, k=1)
+    ball_tree_nearest = data_points[indices[0][0]]
+    print(f"Nearest neighbor to {query_point}: {tuple(ball_tree_nearest)}")
+
+    # Use BallTree to find k-nearest neighbors
+    start_time = time.time()
+    distances, indices = ball_tree.query(query_array, k=k)
+    search_time = time.time() - start_time
+    print(f"Nearest neighbor search time: {search_time:.6f} seconds")
+    ball_tree_nearest_k = [data_points[i] for i in indices[0]]
+    print(f"{k} nearest neighbors to {query_point}:")
+    for neighbor in ball_tree_nearest_k:
+        print(tuple(neighbor))
+
+    # # Use BallTree to find all neighbors within the given radius
+    # indices = ball_tree.query_radius(query_array, r=radius)
+    # ball_tree_range_search = [data_points[i] for i in indices[0]]
+    # print(f"Neighbors within radius {radius} of {query_point}:")
+    # for neighbor in ball_tree_range_search:
+    #     print(tuple(neighbor))
