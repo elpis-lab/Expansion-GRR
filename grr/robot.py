@@ -73,7 +73,7 @@ class Robot:
         """Return the active joint (non-fixed joints)"""
         joints = []
         for i, limit in enumerate(limits):
-            if limit[0] != limit[1]:
+            if limit[0] < limit[1]:
                 joints.append(i)
         return joints
 
@@ -382,8 +382,8 @@ class UR10(Robot):
         """Initialize the ur10 robot. Mainly specify the active joints."""
         super().__init__(name, domain, rot_domain, fixed_rotation)
 
-        # The active joints are the [1, 2, 3, 4, 5, 6] joints
-        self.active_joints = [1, 2, 3, 4, 5, 6]
+        # The active joints are the [2, 3, 4, 5, 6, 7] joints
+        self.active_joints = [2, 3, 4, 5, 6, 7]
         joint_limits = np.array(self.robot.getJointLimits()).T
         self.joint_limits = joint_limits[self.active_joints]
         self.num_joints = len(self.active_joints)
@@ -396,12 +396,13 @@ class UR10(Robot):
 
         # Get robot geometry for collision detection
         self.self_geometry = [
-            self.robot.link(0).geometry(),
-            self.robot.link(1).geometry(),
-            self.robot.link(2).geometry(),
-            self.robot.link(3).geometry(),
-            self.robot.link(4).geometry(),
-            self.robot.link(5).geometry(),
+            self.robot.link("base_link").geometry(),
+            self.robot.link("shoulder_link").geometry(),
+            self.robot.link("upper_arm_link").geometry(),
+            self.robot.link("forearm_link").geometry(),
+            self.robot.link("wrist_1_link").geometry(),
+            self.robot.link("wrist_2_link").geometry(),
+            # self.robot.link("wrist_3_link").geometry(),
         ]
         self.ee_geometry = [
             self.robot.link("rh_p12_rn_base").geometry(),
