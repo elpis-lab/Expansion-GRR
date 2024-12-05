@@ -2,10 +2,10 @@
 
 import numpy as np
 
-from grr.utils import se3_distance
-from grr.utils import wrap_to_pi, interpolate_angle
-from grr.utils import sample_quat, interpolate_quat
-from grr.utils import euler_to_quat, quat_to_euler
+from ..grr.utils import se3_distance
+from ..grr.utils import wrap_to_pi, interpolate_angle
+from ..grr.utils import sample_quat, interpolate_quat
+from ..grr.utils import euler_to_quat, quat_to_euler
 
 import pybullet as p
 
@@ -101,7 +101,7 @@ class Robot:
         """Return the active joint (non-fixed joints)"""
         joints = []
         for i, limit in enumerate(limits):
-            if limit[0] != limit[1]:
+            if limit[0] < limit[1]:
                 joints.append(i)
         return joints
 
@@ -111,7 +111,10 @@ class Robot:
             [
                 i
                 for i, limit in enumerate(joint_limits)
-                if limit[0] == -np.inf or limit[1] == np.inf
+                if (
+                    (limit[0] == -np.inf and limit[1] == np.inf)
+                    or (limit[0] == -1000 and limit[1] == 1000)
+                )
             ]
         )
 
@@ -498,15 +501,16 @@ class UR10(Robot):
         """Initialize the ur10 robot. Mainly specify the active joints."""
         super().__init__(robot_urdf, domain, rot_domain, fixed_rotation)
 
-        # The active joints are the [0, 1, 2, 3, 4, 5] joints
-        active_joints = [0, 1, 2, 3, 4, 5]
+        # The active joints are the [1, 2, 3, 4, 5, 6] joints
+        active_joints = [1, 2, 3, 4, 5, 6]
         self.init_attributes(active_joints)
         self.robot_ee = self.get_link_from_name("ee_link")
 
         # Get robot links for collision detection
         # enabled specific collisions
-        self.self_links = [0, 1, 2, 3, 4, 5]
-        self.gripper_links = [7, 8, 9, 10, 11, 14]
+        self.self_links = [1, 2, 3, 4, 5, 6]
+        self.gripper_links = [8, 9, 10, 11, 12, 15]
+
         for i in self.self_links:
             for j in self.gripper_links:
                 p.setCollisionFilterPair(
@@ -528,20 +532,21 @@ class UR10(Robot):
         q = super().solve_ik(
             point, init_config, max_iters, tolerance, none_on_fail
         )
+        if q is None:
+            return q
 
         # Check for self collision
         # still return none if in collision
-        if q is not None:
-            # set joint
-            for i, joint in enumerate(self.active_joints):
-                self.set_joint(joint, q[i])
-            # check collision
-            p.performCollisionDetection(self.client)
-            dists = list(
-                point[8]
-                for point in p.getContactPoints(physicsClientId=self.client)
-            )
-            if bool(dists) and np.min(dists) < 0:
-                return None
+        # set joint
+        for i, joint in enumerate(self.active_joints):
+            self.set_joint(joint, q[i])
+        # check collision
+        p.performCollisionDetection(self.client)
+        dists = list(
+            point[8]
+            for point in p.getContactPoints(physicsClientId=self.client)
+        )
+        if bool(dists) and np.min(dists) < 0:
+            return None
 
         return q
