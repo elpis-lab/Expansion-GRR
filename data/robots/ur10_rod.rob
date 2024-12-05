@@ -20,7 +20,7 @@ Tparent	1 0 0	0 1 0	0 0 1	0 0 0 \
 1 0 0	0 1 0	0 0 1	0 0.0175 0.0125 \
 2.22045e-16 -2.22045e-16 1	1 0 -2.22045e-16	0 1 2.22045e-16	0 0 0 \
 1 0 0	0 1 0	0 0 1	-0.015 0 0 \
-1 0 0	0 1 0	0 0 1	0 0 0.145 \
+1 0 0	0 1 0	0 0 1	0 0 0.26 \
 1 0 0	0 1 0	0 0 1	0 -0.008 0.058 \
 1 0 0	0 1 0	0 0 1	0 -0.0493634 0.0285 \
 1 0 0	0 1 0	0 0 1	0 0.008 0.058 \
@@ -28,11 +28,11 @@ Tparent	1 0 0	0 1 0	0 0 1	0 0 0 \
 
 q	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
-qmin	0 0 -inf -6.28319 -3.14159 -6.28319 -6.28319 -inf 0 0 0 0 0 0 0 0 0 0 0 
+qmin	0 0 -inf -6.28319 -3.14159 -6.28319 -6.28319 -inf 0 0 0 0 0 0 0 0.95 0.95 0.95 0.95 
 
-qmax	0 0 inf 6.28319 3.14159 6.28319 6.28319 inf 0 0 0 0 0 0 0 1.12 1.12 1.12 1.12 
+qmax	0 0 inf 6.28319 3.14159 6.28319 6.28319 inf 0 0 0 0 0 0 0 0.95 0.95 0.95 0.95 
 
-geometry	"" "ur10/base_link.off" "ur10/shoulder_link.off" "ur10/upper_arm_link.off" "ur10/forearm_link.off" "ur10/wrist_1_link.off" "ur10/wrist_2_link.off" "ur10/wrist_3_link.off" "" "robotis_rh_p12_rn/rh_p12_rn_base.off" "" "realsense2/d435_link.off" "" "" "" "robotis_rh_p12_rn/rh_p12_rn_l1.off" "robotis_rh_p12_rn/rh_p12_rn_l2.off" "robotis_rh_p12_rn/rh_p12_rn_r1.off" "robotis_rh_p12_rn/rh_p12_rn_r2.off" 
+geometry	"" "ur10/base_link.off" "ur10/shoulder_link.off" "ur10/upper_arm_link.off" "ur10/forearm_link.off" "ur10/wrist_1_link.off" "ur10/wrist_2_link.off" "ur10/wrist_3_link.off" "" "robotis_rh_p12_rn/rh_p12_rn_base.off" "" "realsense2/d435_link.off" "" "" "ur10/ee_link.off" "robotis_rh_p12_rn/rh_p12_rn_l1.off" "robotis_rh_p12_rn/rh_p12_rn_l2.off" "robotis_rh_p12_rn/rh_p12_rn_r1.off" "robotis_rh_p12_rn/rh_p12_rn_r2.off" 
 
 mass	0.001 4 7.778 12.93 3.87 1.96 1.96 0.202 0 0.236 0.001 0.564 0 0 0 0.068 0.022 0.068 0.022 
 
@@ -47,8 +47,9 @@ velmax	0 0 2.16 2.16 3.15 3.2 3.2 3.2 0 0 0 0 0 0 0 6.5 6.5 6.5 6.5
 accmax	0 0 4 4 4 4 4 4 0 0 0 0 0 0 0 4 4 4 4 
 
 noselfcollision	3 5	
-noselfcollision	5 7	
-noselfcollision	7 9	
+noselfcollision	5 7	5 14	
+noselfcollision	6 14	
+noselfcollision	7 9	7 14	
 noselfcollision	9 16	9 18	
 noselfcollision	15 17	15 18	
 noselfcollision	16 17	16 18	
@@ -82,7 +83,7 @@ driver normal 6
 driver normal 7
 driver normal 15
 driver normal 16
-driver affine 2	17 18 	1 1 	0 0 	0 1.12	6.5 6.5	-1000 1000
+driver affine 2	17 18 	1 1 	0 0 	0.95 0.95	6.5 6.5	-1000 1000
 
 
 servoP	200 200 200 200 200 200 200 100 200 

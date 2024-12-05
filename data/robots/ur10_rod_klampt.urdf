@@ -8,7 +8,12 @@
   Author: Kelsey Hawkins
   Contributers: Jimmy Da Silva, Ajit Krisshna N L, Muhammad Asif Rana
 -->
-  <!-- ROS base_link to UR 'Base' Coordinates transform -->
+  <!-- measured from model -->
+  <link name="world"/>
+  <joint name="fied_world" type="fixed">
+    <parent link="world" />
+    <child link="base" />
+  </joint>
   <link name="base">
     <inertial>
       <mass value="1e-3"/>
@@ -52,7 +57,7 @@
     <child link="shoulder_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.1273"/>
     <axis xyz="0 0 1"/>
-    <limit effort="330.0" lower="-1000" upper="1000" velocity="2.16"/>
+    <limit effort="330.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="2.16"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <link name="shoulder_link">
@@ -192,7 +197,7 @@
     <child link="wrist_3_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.1157"/>
     <axis xyz="0 1 0"/>
-    <limit effort="54.0" lower="-1000" upper="1000" velocity="3.2"/>
+    <limit effort="54.0" lower="-6.283185307179586" upper="6.283185307179586" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <link name="wrist_3_link">
@@ -341,7 +346,7 @@
     <child link="rh_p12_rn_r1"/>
     <origin xyz="0.0 0.008 0.058" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit velocity="6.5" effort="1000" lower="0.0" upper="1.12" />
+    <limit velocity="6.5" effort="1000" lower="0.95" upper="0.95" />
     <dynamics damping="0.7"/>
   </joint>
   <gazebo reference="rh_p12_rn">
@@ -390,7 +395,7 @@
     <child link="rh_p12_rn_r2"/>
     <origin xyz="0.0 0.0493634 0.0285" rpy="0 0 0"/>
     <axis xyz="-1 0 0"/>
-    <limit velocity="6.5" effort="1000" lower="0.0" upper="1.12" />
+    <limit velocity="6.5" effort="1000" lower="0.95" upper="0.95" />
     <dynamics damping="0.7"/>
     <mimic joint="rh_p12_rn" multiplier="1" offset="0" />
   </joint>
@@ -447,7 +452,7 @@
     <child link="rh_p12_rn_l1"/>
     <origin xyz="0.0 -0.008 0.058" rpy="0 0 0"/>
     <axis xyz="-1 0 0"/>
-    <limit velocity="6.5" effort="1000" lower="0.0" upper="1.12" />
+    <limit velocity="6.5" effort="1000" lower="0.95" upper="0.95" />
     <dynamics damping="0.7"/>
     <mimic joint="rh_p12_rn" multiplier="1" offset="0" />
   </joint>
@@ -497,7 +502,7 @@
     <child link="rh_p12_rn_l2"/>
     <origin xyz="0.0 -0.0493634 0.0285" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit velocity="6.5" effort="1000" lower="0.0" upper="1.12" />
+    <limit velocity="6.5" effort="1000" lower="0.95" upper="0.95" />
     <dynamics damping="0.7"/>
     <mimic joint="rh_p12_rn" multiplier="1" offset="0" />
   </joint>
@@ -552,14 +557,29 @@
   <joint name="ee_fixed_joint" type="fixed">
     <parent link="rh_p12_rn_base"/>
     <child link="ee_link"/>
-    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.145"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.260"/>
   </joint>
   <link name="ee_link">
     <inertial>
-      <mass value="1e-3"/>
+      <mass value="1e-2"/>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-      <inertia ixx="1e-5" ixy="0.0" ixz="0.0" iyy="1e-5" iyz="0.0" izz="1e-5"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
     </inertial>
+    <collision>
+      <origin xyz="0 0 -0.085" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="0.17" radius="0.01"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 -0.085" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="0.17" radius="0.01"/>
+      </geometry>
+      <material name="gold">
+        <color rgba="0.7 0.55 0.15 1.0"/>
+      </material>
+    </visual>
   </link>
   <!-- camera body, with origin at bottom screw mount -->
   <joint name="d435_joint" type="fixed">
@@ -628,4 +648,34 @@
       <inertia ixx="1E-5" ixy="0" ixz="0" iyy="1E-5" iyz="-0" izz="1E-5"/>
     </inertial>
   </link>
+  <!--Klampt-->
+  <!--Somehow the visual doesn't work for UR10 (maybe because of the dae?)-->
+  <!--<klampt package_root=".." flip_yz="1" use_vis_geom="1" freeze_root_link="1" default_acc_max="4">-->
+  <klampt package_root="" freeze_root_link="1" default_acc_max="4">
+    <link name="tool0" physical="0" />
+    <link name="ee_link" physical="0" />
+    <!-- <link name="d435_bottom_screw_frame" physical="0" /> -->
+    <link name="d435_depth_frame" physical="0" />
+    <link name="d435_color_frame" physical="0" />
+    <!---->
+    <link name="shoulder_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="upper_arm_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="forearm_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="wrist_1_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="wrist_2_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="wrist_3_link" servoP="200" servoI="0" servoD="10"/>
+    <link name="rh_p12_rn_r1" servoP="200" servoI="0" servoD="10"/>
+    <link name="rh_p12_rn_l1" servoP="200" servoI="0" servoD="10"/>
+    <!---->
+    <noselfcollision pairs="base_link shoulder_link" />
+    <noselfcollision group1="upper_arm_link" group2="shoulder_link forearm_link" />
+    <noselfcollision group1="wrist_1_link" group2="upper_arm_link wrist_2_link wrist_3_link" />
+    <noselfcollision group1="wrist_3_link" group2="wrist_2_link rh_p12_rn_base" />
+    <noselfcollision group1="ee_link" group2="wrist_1_link wrist_2_link wrist_3_link tool0 rh_p12_rn_base" />
+    <noselfcollision group1="tool0" group2="wrist_1_link wrist_2_link wrist_3_link rh_p12_rn_base" />
+    <noselfcollision group1="rh_p12_rn_base" group2="rh_p12_rn_r1 rh_p12_rn_r2 rh_p12_rn_l1 rh_p12_rn_l2" />
+    <noselfcollision group1="rh_p12_rn_r1" group2="rh_p12_rn_r2 rh_p12_rn_l1 rh_p12_rn_l2" />
+    <noselfcollision group1="rh_p12_rn_l1" group2="rh_p12_rn_r2 rh_p12_rn_l2" />
+    <noselfcollision group1="rh_p12_rn_l2" group2="rh_p12_rn_r2" />
+  </klampt>
 </robot>
