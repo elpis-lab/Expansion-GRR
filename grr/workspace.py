@@ -4,12 +4,11 @@ import pickle
 import numpy as np
 import networkx as nx
 from sklearn.neighbors import BallTree
-from pynndescent import NNDescent
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from .utils import se3_metric
+from .utils import se3_distance
 from .utils import get_staggered_grid, get_so3_grid
 from .utils import quat_to_euler, rotvec_to_quat, quat_to_rotvec
 
@@ -67,9 +66,8 @@ class RedundancyWorkspace:
         """Build nearest neighbor search structure"""
         print("Building nearest neighbor search structure")
         # By default, when only dealing with position,
-        # use BallTree for searching
+        # use BallTree's optimized Euclidean metric
         if self.robot.rotation != "variable":
-            print("Building BallTree")
             nn = BallTree(
                 np.array(
                     [node["point"] for _, node in graph.nodes(data=True)]
@@ -77,22 +75,13 @@ class RedundancyWorkspace:
                 metric="euclidean",
             )
 
-        # When dealing with rotation, use pynndescent for searching
-        # the trade-off is that pynndescent takes longer to build the tree,
-        # but with customized SE3 distance, it is much faster to search
+        # When dealing with rotation, use customized SE3 metric
         else:
-            print("Building NNDescent")
-            print(
-                "This structure would take a while to build,",
-                "but it is much faster to search with SE(3) distance later.",
-                "\nFor reference: 10K -> 40s, 100K -> 3mins, 1M -> 30mins",
-            )
-            nn = NNDescent(
+            nn = BallTree(
                 np.array(
                     [node["point"] for _, node in graph.nodes(data=True)]
                 ),
-                metric=se3_metric,
-                n_neighbors=100,  # recommended number
+                metric=se3_distance,
             )
 
         return nn
@@ -286,30 +275,21 @@ class RedundancyWorkspace:
 
         # Nearest neighbors
         # only indices are needed
+        if radius is not None:
+            neighbors = nn.query_radius(
+                [point], radius, return_distance=True, sort_results=True
+            )[0][0]
+            return neighbors
 
-        # If it is a BallTree
-        if isinstance(nn, BallTree):
-            if radius is not None:
-                return nn.query_radius(
-                    [point], radius, return_distance=True, sort_results=True
-                )[0][0]
-
-            else:
-                return nn.query(
-                    [point], k, return_distance=True, sort_results=True
-                )[1][0]
-
-        # If it is a NNDescent
-        elif isinstance(nn, NNDescent):
-            if radius is not None:
-                raise ValueError("NNDescent does not support radius search")
-
-            else:
-                # Neighbor accuracy is critical for the performance.
-                # For higher accuracy, use more neighbors
-                new_k = max(k, 200)
-                candidates = nn.query([point], k=new_k, epsilon=0.75)[0][0]
-                return candidates[:k]
+        else:
+            # In practice, when using customized SE3 metric
+            # and the number of points in NN is large,
+            # Balltree can miss the correct neighbors.
+            # Get more nearest neighbor to avoid this problem.
+            neighbors = nn.query(
+                [point], k * 10, return_distance=True, sort_results=True
+            )[1][0]
+            return neighbors[:k]
 
     def visualize_workspace_graph(self):
         """Visualize the workspace graph"""

@@ -25,7 +25,7 @@ def main(opts):
 
     # Global redundancy resolution
     resolution = RedundancyResolution(robot)
-    resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
+    # resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
     resolution.load_resolution_graph(
         graph_folder + "graph_resolution.pickle",
         graph_folder + "nn_resolution.pickle",
@@ -40,7 +40,7 @@ def main(opts):
 if __name__ == "__main__":
     # Default json file
     robot_name = "ur10"
-    json_file_name = "rot_free"
+    json_file_name = "rot_variable_yaw"
 
     # Override with system arguments if provided
     if len(sys.argv) == 2:

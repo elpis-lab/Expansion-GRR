@@ -36,7 +36,7 @@ def load_grr(robot_name, roadmap_type):
     graph_folder = (dir_folder + "/graph/") + (
         opts["robot_name"] + "/" + opts["problem_type"] + "/"
     )
-    grr.load_solver_graph(graph_folder + "graph_solver.pickle")
+    # grr.load_solver_graph(graph_folder + "graph_solver.pickle")
     grr.load_resolution_graph(
         graph_folder + "graph_resolution.pickle",
         graph_folder + "nn_resolution.pickle",

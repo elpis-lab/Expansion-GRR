@@ -1,63 +1,32 @@
 """Utility functions for GRR"""
 
-import numba
+import math
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
 from sklearn.neighbors import BallTree
 
 
-@numba.jit(
-    nopython=True,
-    fastmath=True,
-    locals={
-        "d_position": numba.types.float64,
-        "d_rotation": numba.types.float64,
-    },
-)
-def se3_metric(point1, point2):
-    """Compute the distance between two workspace points in SE3.
-    Use as the metric for SE3 nearest neighbor searching.
-
-    Note: Input point must be numpy array
-    """
-    return se3_distance(point1, point2)
-
-
-@numba.jit(
-    nopython=True,
-    fastmath=True,
-    locals={
-        "d_position": numba.types.float64,
-        "d_rotation": numba.types.float64,
-    },
-)
-def se3_distance(point1, point2, position_weight=1.0, rotation_weight=0.3):
-    """Compute the distance between two workspace points, either R^3 or SE3.
-    Use numba for this function to speed up the computation.
-
-    Note: Input point must be numpy array
-    """
+def se3_distance(p1, p2, position_weight=1.0, rotation_weight=0.3):
+    """Compute the distance between two workspace SE3 points."""
     # Position component
     # position distance - euclidean
-    d_position = np.linalg.norm(point1[:3] - point2[:3])
+    d_position = math.hypot(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2])
 
-    # Rotation not included
-    if len(point1) <= 3:
-        return d_position
+    # Rotation component
+    # # rotation distance - arc length
+    # d_rotation = np.abs(np.dot(point1[3:7], point2[3:7]))
+    # if d_rotation > 1:
+    #     d_rotation = 1  # Clip to [0, 1] range
+    # d_rotation = 2 * np.arccos(d_rotation)
 
-    # Rotation included
-    else:
-        # # rotation distance - arc length
-        # d_rotation = np.abs(np.dot(point1[3:7], point2[3:7]))
-        # if d_rotation > 1:
-        #     d_rotation = 1  # Clip to [0, 1] range
-        # d_rotation = 2 * np.arccos(d_rotation)
+    # rotation distance - simplified
+    # d_rotation = 1 - np.abs(np.dot(point1[3:7], point2[3:7]))
+    d_rotation = 1 - abs(
+        p1[3] * p2[3] + p1[4] * p2[4] + p1[5] * p2[5] + p1[6] * p2[6]
+    )
 
-        # rotation distance - simplified
-        d_rotation = 1 - np.abs(np.dot(point1[3:7], point2[3:7]))
-
-        return position_weight * d_position + rotation_weight * d_rotation
+    return position_weight * d_position + rotation_weight * d_rotation
 
 
 def quaternion_angle(q1, q2):
