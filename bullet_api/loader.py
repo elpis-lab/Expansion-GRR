@@ -1,10 +1,14 @@
 """Load GRR roadmap for a robot and problem type."""
 
 import os
+import sys
 
 from ..grr.resolution import RedundancyResolution
 from ..grr.json_utils import load_json
 from .robot import KinematicChain, Kinova, UR10
+
+# Needed for loading pickled files
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def load_grr(robot_name, roadmap_type):
