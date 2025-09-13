@@ -1,7 +1,7 @@
 # Expansion-GRR: Efficient Generation of Smooth GRR Roadmaps
 A Python implementation of our IROS 2024 paper: *Expansion-GRR: Expansion-GRR: Efficient Generation of Smooth Global Redundancy Resolution Roadmaps*
 
-[[Paper](https://ieeexplore.ieee.org/document/10801917)] [[Pre-print](https://arxiv.org/abs/2405.13770)] [[Presentation Video](https://youtu.be/YnLAqy3MtfQ)] [(TBA) [Poster]()]
+[[Paper](https://ieeexplore.ieee.org/document/10801917)] [[Pre-print](https://arxiv.org/abs/2405.13770)] [[Presentation Video](https://youtu.be/YnLAqy3MtfQ)]
 
 This is a method for efficient generation of smooth global
 redundancy resolution roadmaps. A teleoperation pipeline utilizing the built roadmaps is also demonstrated in this package.
