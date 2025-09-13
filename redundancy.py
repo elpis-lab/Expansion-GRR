@@ -7,8 +7,7 @@ import time
 from grr.json_utils import load_json
 from grr.robot import KinematicChain, Kinova, UR10
 from grr.resolution import RedundancyResolution
-
-from experiment.roadmap_quality import evaluate_roadmap
+from grr.roadmap_quality import evaluate_roadmap
 
 
 def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
