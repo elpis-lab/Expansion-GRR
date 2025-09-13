@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from grr.json_utils import load_json
-from grr.robot import KinematicChain, Kinova
+from grr.robot import KinematicChain, Kinova, UR10
 from grr.resolution import RedundancyResolution
 
 

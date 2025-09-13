@@ -14,7 +14,7 @@ from klampt import TransformPoser
 from klampt.vis.glcommon import GLWidgetPlugin
 from klampt.vis import gldraw
 
-from grr.utils import matrix_to_quat
+from grr.utils import matrix_to_quat, euler_to_matrix, quaternion_close
 
 RED = [0.6350, 0.0780, 0.1840]
 GREEN = [0, 0.6078, 0.3333]
@@ -46,6 +46,8 @@ class GLRedundancyProgram(GLWidgetPlugin):
         self.domain = np.array(self.robot.domain)
         self.visualize_workspace = False
         self.roadmap_lists = self.load_roadmap_vertices_and_edges()
+        self.dis_index = 0
+        self.dis_index_map = {}
         self.disconnection_lists = self.load_disconnected_vertices_and_edges()
         # trajectory
         self.walk_path = []
@@ -76,31 +78,79 @@ class GLRedundancyProgram(GLWidgetPlugin):
         """Load the disconnected vertices and edges from the resolution graph"""
         graph = self.resolution.solver.graph
         if graph is None:
-            return [], []
+            return [[[], []]]
 
-        points = set()
-        edges = set()
-        for i, j, _ in graph.edges(data=True):
-            # skip connected edges
-            if graph.edges[i, j]["connected"]:
-                continue
-            # skip unfesiable nodes
-            if (
-                graph.nodes[i]["config"] is None
-                or graph.nodes[j]["config"] is None
-            ):
-                continue
+        # If no rotation involved, return list with one element
+        # that contains all the points and edges
+        if self.robot.rotation != "variable":
+            points = set()
+            edges = set()
+            for i, j, _ in graph.edges(data=True):
+                # skip connected edges
+                if graph.edges[i, j]["connected"]:
+                    continue
+                # skip unfesiable nodes
+                if (
+                    graph.nodes[i]["config"] is None
+                    or graph.nodes[j]["config"] is None
+                ):
+                    continue
 
-            points.add(tuple(graph.nodes[i]["point"][:3]))
-            points.add(tuple(graph.nodes[j]["point"][:3]))
-            edges.add(
-                (
-                    tuple(graph.nodes[i]["point"][:3]),
-                    tuple(graph.nodes[j]["point"][:3]),
+                points.add(tuple(graph.nodes[i]["point"][:3]))
+                points.add(tuple(graph.nodes[j]["point"][:3]))
+                edges.add(
+                    (
+                        tuple(graph.nodes[i]["point"][:3]),
+                        tuple(graph.nodes[j]["point"][:3]),
+                    )
                 )
-            )
 
-        return list(points), list(edges)
+            return [[list(points), list(edges)]]
+
+        # If rotation involved, return list with multiple elements
+        # and each element contains one specific orientation
+        # TODO disconnections between orientation are temporarly ignored
+        else:
+            disconnection_lists = []
+            for i, j, _ in graph.edges(data=True):
+                # create a new list for each orientation
+                ori = graph.nodes[i]["point"][3:]
+                ori = tuple(np.round(ori, decimals=5))
+
+                if ori not in self.dis_index_map:
+                    self.dis_index_map[ori] = len(disconnection_lists)
+                    disconnection_lists.append([set(), set()])
+
+                # skip connected edges
+                if graph.edges[i, j]["connected"]:
+                    continue
+                # skip unfesiable nodes
+                if (
+                    graph.nodes[i]["config"] is None
+                    or graph.nodes[j]["config"] is None
+                ):
+                    continue
+
+                # TODO disconnections between orientation are temporarly ignored
+                if not np.allclose(
+                    graph.nodes[i]["point"][3:], graph.nodes[j]["point"][3:]
+                ):
+                    continue
+
+                node_set = disconnection_lists[self.dis_index_map[ori]][0]
+                edge_set = disconnection_lists[self.dis_index_map[ori]][1]
+                node_set.add(tuple(graph.nodes[i]["point"][:3]))
+                node_set.add(tuple(graph.nodes[j]["point"][:3]))
+                edge_set.add(
+                    (
+                        tuple(graph.nodes[i]["point"][:3]),
+                        tuple(graph.nodes[j]["point"][:3]),
+                    )
+                )
+
+            print("Disconnection index map:", len(self.dis_index_map))
+            # print(self.dis_index_map.keys())
+            return disconnection_lists
 
     def initialize(self):
         """Initialize the program"""
@@ -125,12 +175,12 @@ class GLRedundancyProgram(GLWidgetPlugin):
         vp.w, vp.h = self.width, self.height
         vp.clippingplanes = self.clipping_planes
         # plane - top-down view
-        vp.set_transform(((1, 0, 0, 0, 1, 0, 0, 0, 1), (0, 0, 5)), "openGL")
+        # vp.set_transform(((1, 0, 0, 0, 1, 0, 0, 0, 1), (0, 0, 5)), "openGL")
         # 3d - side view
         # matrix = euler_to_matrix((-90, 0, 0), degrees=True).flatten().tolist()
         # vp.set_transform((matrix, (0, -3, 0)), "openGL")
-        # matrix = euler_to_matrix((-90, 90, 0), degrees=True).flatten().tolist()
-        # vp.set_transform((matrix, (-3, 0.2, 0)), "openGL")
+        matrix = euler_to_matrix((-90, 90, 0), degrees=True).flatten().tolist()
+        vp.set_transform((matrix, (-3, 0.2, 0)), "openGL")
 
         vis.setViewport(vp)
 
@@ -177,7 +227,7 @@ class GLRedundancyProgram(GLWidgetPlugin):
             glColor3f(*YELLOW)
             glPointSize(3.0)
             glBegin(GL_POINTS)
-            for point in self.disconnection_lists[0]:
+            for point in self.disconnection_lists[self.dis_index][0]:
                 glVertex3fv(point)
             glEnd()
 
@@ -186,7 +236,7 @@ class GLRedundancyProgram(GLWidgetPlugin):
             glColor3f(*RED)
             glLineWidth(1.0)
             glBegin(GL_LINES)
-            for point_pair in self.disconnection_lists[1]:
+            for point_pair in self.disconnection_lists[self.dis_index][1]:
                 glVertex3fv(point_pair[0])
                 glVertex3fv(point_pair[1])
             glEnd()
@@ -219,7 +269,7 @@ class GLRedundancyProgram(GLWidgetPlugin):
             glPointSize(20.0)
             glBegin(GL_POINTS)
             point = self.walk_workspace_path[self.walk_workspace_progress]
-            glVertex3fv(point)
+            glVertex3fv(point[:3])
             glEnd()
 
         GLWidgetPlugin.display(self)
@@ -242,6 +292,45 @@ class GLRedundancyProgram(GLWidgetPlugin):
             elif self.mode == "teleoperation":
                 self.mode = "inspection"
             print("Toggled visualization mode to", self.mode)
+
+        elif c == "b":
+            if self.robot.rotation != "variable":
+                self.dis_index = 0
+                return
+
+            rotation_matrix, x = self.xform_widget.get()
+            # get current point
+            rot = matrix_to_quat(rotation_matrix)
+            from grr.utils import quat_to_euler
+
+            print(quat_to_euler(rot, degrees=True))
+            point = np.concatenate((x, rot))
+            # find nearest neighbors
+            neighbors = self.resolution.workspace.get_workspace_neighbors(
+                point,
+                self.resolution.nn,
+                k=self.resolution.workspace.interpolate_num_neighbors,
+            )
+            neighbors = [
+                n
+                for n in neighbors
+                if self.resolution.graph.nodes[n]["config"] is not None
+            ]
+            # use that neighbor to find the proper orientation
+            if len(neighbors) != 0:
+                ori = self.resolution.graph.nodes[neighbors[0]]["point"][3:]
+                ori = tuple(np.round(ori, decimals=5))
+                self.dis_index = self.dis_index_map[ori]
+                print("Switched to disconnection index", self.dis_index)
+
+        elif c == "n":
+            self.dis_index -= 1
+            self.dis_index %= len(self.disconnection_lists)
+            print("Switched to disconnection index", self.dis_index)
+        elif c == "m":
+            self.dis_index += 1
+            self.dis_index %= len(self.disconnection_lists)
+            print("Switched to disconnection index", self.dis_index)
 
         elif c == "g":
             self.visualize_workspace = not self.visualize_workspace

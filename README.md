@@ -16,12 +16,14 @@ Python3.8+ with extra packages
 - Visualization packages with Klampt - **PyOpenGL**, **PyQt5**
 - Progress visualization tools - **tqdm**
 - Graph package - **networkx**
-- Nearest neighbor packages - **scikit-learn**, **pynndescent**, **numba**
+- Nearest neighbor packages - **scikit-learn**
 - Evaluation function - **fastdtw**
 
 ```
 pip install -r requirements.txt
 ```
+
+If you can not load the provided graphs (caused by **networkx** version mismatch), you may simply regenerate the graph from your end.
 
 ## Build GRR Roadmaps
 

@@ -10,7 +10,7 @@ from klampt.model import ik, collide
 from .utils import se3_distance
 from .utils import wrap_to_pi, interpolate_angle
 from .utils import sample_quat, interpolate_quat
-from .utils import euler_to_quat, euler_to_matrix
+from .utils import euler_to_quat, quat_to_euler
 from .utils import quat_to_matrix, matrix_to_quat
 
 
@@ -32,7 +32,7 @@ class Robot:
                 [1, 0, 0] means rotation is variable in x, others are kept 0
                 [1, 1, 1] means rotation is variable in x, y and z
             fixed_rotation: a fixed rotation for the rotation component,
-                defined as euler angles [q_x, q_y, q_z], in radian
+                            defined as euler angles [q_x, q_y, q_z], in radian
         """
         self.name = name
         self.world = klampt.WorldModel()
@@ -42,44 +42,38 @@ class Robot:
 
         self.domain = domain
         self.rot_domain = rot_domain
-        if np.sum(rot_domain) != 0:
-            self.rotation = "variable"
-            self.fixed_rotation = None
-        elif fixed_rotation is not None:
-            self.rotation = "fixed"
-            # Convert euler to rotation matrix if size is 3
-            fixed_rotation = np.array(fixed_rotation)
-            if len(fixed_rotation.shape) == 1 and len(fixed_rotation) == 3:
-                fixed_rotation = euler_to_matrix(fixed_rotation)
-            self.fixed_rotation = fixed_rotation
+        self.fixed_rotation = fixed_rotation
+        # Fixed rotation provided, not totally free
+        if self.fixed_rotation is not None:
+            # convert euler to quaternion
+            self.fixed_rotation = euler_to_quat(np.array(fixed_rotation))
+            # rotation totally fixed
+            if np.sum(rot_domain) == 0:
+                self.rotation = "fixed"
+            # some rotation is not fixed
+            else:
+                self.rotation = "variable"
+
+        # Free rotation
         else:
             self.rotation = "free"
-            self.fixed_rotation = None
-
-        # Initialize the robot attributes
-        # This can be customized for different robots
-        joint_limits = np.array(self.robot.getJointLimits()).T
-        active_joints = self.get_active_joints(joint_limits)
-        self.init_attributes(active_joints)
-        # assume the last joint of the robot
-        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
-
-    def init_attributes(self, active_joints):
-        """Initialize the attributes"""
-        self.active_joints = active_joints
 
         joint_limits = np.array(self.robot.getJointLimits()).T
+        self.active_joints = self.get_active_joints(joint_limits)
         self.joint_limits = joint_limits[self.active_joints]
         self.num_joints = len(self.active_joints)
         self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
         # get only the active ones
         self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
+        self.robot_ee = self.robot.link(self.robot.numLinks() - 1)
 
     def get_active_joints(self, limits):
         """Return the active joint (non-fixed joints)"""
         joints = []
         for i, limit in enumerate(limits):
-            if limit[0] != limit[1]:
+            if limit[0] < limit[1]:
                 joints.append(i)
         return joints
 
@@ -104,21 +98,27 @@ class Robot:
         point = [np.random.uniform(a, b) for (a, b) in self.domain]
 
         # Sample in rotation (SO(3))
-        # TODO test this for rotation SO(3)
         # variable
         if self.rotation == "variable":
             # if only need to sample in one rotation dimension
+            # keep the other two as the same as fixed_rotation
             if np.sum(self.rot_domain) == 1:
                 angle = np.random.uniform(-np.pi, np.pi)
-                euler = np.zeros(3)
+                euler = quat_to_euler(self.fixed_rotation)
                 index = self.rot_domain.index(1)
                 euler[index] = angle
                 quat = euler_to_quat(euler)
 
-            # if need to sample in two rotation dimensions
+            # TODO this implementation is not totally correct
             elif np.sum(self.rot_domain) == 2:
-                # TODO
                 raise NotImplementedError
+                # angle1 = np.random.uniform(-np.pi, np.pi)
+                # angle2 = np.random.uniform(-np.pi, np.pi)
+                # euler = quat_to_euler(self.fixed_rotation)
+                # indices = [i for i, _ in enumerate(self.rot_domain) if x == 1]
+                # euler[indices[0]] = angle1
+                # euler[indices[1]] = angle2
+                # quat = euler_to_quat(euler)
 
             # if need to sample in so3
             else:
@@ -145,7 +145,6 @@ class Robot:
         pos = point1[:3] + u * (point2[:3] - point1[:3])
 
         # Rotation interpolation
-        # TODO test this for rotation SO(3)
         # variable
         if self.rotation == "variable":
             quat = interpolate_quat(point1[3:7], point2[3:7], u)
@@ -254,7 +253,6 @@ class Robot:
         self.robot.setConfig(list(config))
 
         # Setup objective
-        # TODO test this for rotation SO(3)
         # variable
         if self.rotation == "variable":
             obj = ik.objective(
@@ -277,7 +275,7 @@ class Robot:
             obj = ik.objective(
                 self.robot_ee,
                 # target rotation matrix
-                R=list(self.fixed_rotation.flatten()),
+                R=list(quat_to_matrix(self.fixed_rotation).flatten()),
                 t=list(point[:3]),
             )
 
@@ -311,8 +309,15 @@ class Kinova(Robot):
         super().__init__(name, domain, rot_domain, fixed_rotation)
 
         # The active joints are the [1, 2, 3, 4, 5, 6, 7] joints
-        active_joints = [1, 2, 3, 4, 5, 6, 7]
-        self.init_attributes(active_joints)
+        self.active_joints = [1, 2, 3, 4, 5, 6, 7]
+        joint_limits = np.array(self.robot.getJointLimits()).T
+        self.joint_limits = joint_limits[self.active_joints]
+        self.num_joints = len(self.active_joints)
+        self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
+        # get only the active ones
+        self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
         self.robot_ee = self.robot.link("Tool_Frame")
 
         # Get robot geometry for collision detection
@@ -331,6 +336,81 @@ class Kinova(Robot):
             self.robot.link("gripper:Link_6").geometry(),
             self.robot.link("gripper:Link_7").geometry(),
             self.robot.link("gripper:Link_8").geometry(),
+        ]
+
+    def solve_ik(
+        self,
+        point,
+        init_config=None,
+        max_iters=100,
+        tolerance=1e-3,
+        none_on_fail=True,
+    ):
+        """Solve the inverse kinematics problem w/o initial angles
+
+        Consider self collision with the end effector
+        """
+        q = super().solve_ik(
+            point, init_config, max_iters, tolerance, none_on_fail
+        )
+
+        # Check for self collision
+        # still return none if in collision
+        if q is not None and self.check_self_collision(q):
+            return None
+
+        return q
+
+    def check_self_collision(self, q):
+        """Check for self collision"""
+        # return False
+        # Set config
+        config = np.array(self.robot.getConfig())
+        config[self.active_joints] = q
+        self.robot.setConfig(list(config))
+
+        collision = collide.group_collision_iter(
+            self.self_geometry, self.ee_geometry
+        )
+        return sum(1 for _ in collision) > 0
+
+
+class UR10(Robot):
+    """UR10 Robotic Arm with Robotis hand and D435 camera"""
+
+    def __init__(self, name, domain, rot_domain, fixed_rotation=None):
+        """Initialize the ur10 robot. Mainly specify the active joints."""
+        super().__init__(name, domain, rot_domain, fixed_rotation)
+
+        # The active joints are the [2, 3, 4, 5, 6, 7] joints
+        self.active_joints = [2, 3, 4, 5, 6, 7]
+        joint_limits = np.array(self.robot.getJointLimits()).T
+        self.joint_limits = joint_limits[self.active_joints]
+        self.num_joints = len(self.active_joints)
+        self.cyclic_joints = self.get_cyclic_joints(self.joint_limits)
+
+        # get only the active ones
+        self.links = [self.robot.link(i) for i in self.active_joints]
+        # assume the last joint of the robot
+        self.robot_ee = self.robot.link("ee_link")
+
+        # Get robot geometry for collision detection
+        self.self_geometry = [
+            self.robot.link("base_link").geometry(),
+            self.robot.link("shoulder_link").geometry(),
+            self.robot.link("upper_arm_link").geometry(),
+            self.robot.link("forearm_link").geometry(),
+            self.robot.link("wrist_1_link").geometry(),
+            self.robot.link("wrist_2_link").geometry(),
+            # self.robot.link("wrist_3_link").geometry(),
+        ]
+        self.ee_geometry = [
+            self.robot.link("rh_p12_rn_base").geometry(),
+            self.robot.link("rh_p12_rn_l1").geometry(),
+            self.robot.link("rh_p12_rn_l2").geometry(),
+            self.robot.link("rh_p12_rn_r1").geometry(),
+            self.robot.link("rh_p12_rn_r2").geometry(),
+            self.robot.link("d435_link").geometry(),
         ]
 
     def solve_ik(

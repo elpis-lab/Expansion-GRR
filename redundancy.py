@@ -5,7 +5,7 @@ import sys
 import time
 
 from grr.json_utils import load_json
-from grr.robot import KinematicChain, Kinova
+from grr.robot import KinematicChain, Kinova, UR10
 from grr.resolution import RedundancyResolution
 
 from experiment.roadmap_quality import evaluate_roadmap
@@ -38,15 +38,15 @@ def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
             n_rot_points=opts["number_of_rotation_points"],
             sampling_method="grid",
         )
-        resolution.save_workspace_graph(
-            graph_folder + "graph_workspace.pickle",
-            graph_folder + "nn_workspace.pickle",
-        )
-    else:
-        resolution.load_workspace_graph(
-            graph_folder + "graph_workspace.pickle",
-            graph_folder + "nn_workspace.pickle",
-        )
+    #     resolution.save_workspace_graph(
+    #         graph_folder + "graph_workspace.pickle",
+    #         graph_folder + "nn_workspace.pickle",
+    #     )
+    # else:
+    #     resolution.load_workspace_graph(
+    #         graph_folder + "graph_workspace.pickle",
+    #         graph_folder + "nn_workspace.pickle",
+    #     )
     # resolution.visualize_workspace_graph()
 
     # Timer
@@ -55,9 +55,9 @@ def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
     # Build configuration space graph
     if not load_existed_solver_graph:
         resolution.global_expansion(opts["init_configs"])
-        resolution.save_solver_graph(graph_folder + "graph_solver.pickle")
-    else:
-        resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
+    #     resolution.save_solver_graph(graph_folder + "graph_solver.pickle")
+    # else:
+    #     resolution.load_solver_graph(graph_folder + "graph_solver.pickle")
 
     # Optimization
     resolution.fix_boundary(n_neighbor_layer=1, n_iter=2)
@@ -85,8 +85,8 @@ def main(opts, load_existed_ws_graph=False, load_existed_solver_graph=False):
 
 if __name__ == "__main__":
     # Default json file
-    robot_name = "planar_5"
-    json_file_name = "rot_free"
+    robot_name = "ur10"
+    json_file_name = "rot_variable_yaw"
 
     # Override with system arguments if provided
     if len(sys.argv) == 2:

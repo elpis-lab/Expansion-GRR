@@ -253,10 +253,27 @@ class RedundancyResolution:
 
         def solve_with_guess(guess):
             """A helper function to solve IK with a guess configuration"""
-            return self.robot.solve_ik(point, guess, none_on_fail=none_on_fail)
+            q = self.robot.solve_ik(point, guess, none_on_fail=none_on_fail)
+            if q is None:
+                return q
+
+            # A engineering fix to avoid sudden jump when controllers
+            # tries to track cyclic joints
+            if curr_config is None:
+                return q
+            for joint in self.robot.cyclic_joints:
+                delta = q[joint] - curr_config[joint]
+                q[joint] -= np.round(delta / (2 * np.pi)) * 2 * np.pi
+            return q
+
+        point = np.array(point)
 
         if regular_ik:
             return solve_with_guess(curr_config)
+
+        # Normalize the rotation part if the point includes it
+        if len(point) > 3:
+            point[3:] = point[3:] / np.linalg.norm(point[3:])
 
         neighbors = self.workspace.get_workspace_neighbors(
             point, self.nn, k=self.workspace.interpolate_num_neighbors

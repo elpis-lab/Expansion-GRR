@@ -1,63 +1,32 @@
 """Utility functions for GRR"""
 
-import numba
+import math
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
 from sklearn.neighbors import BallTree
 
 
-@numba.jit(
-    nopython=True,
-    fastmath=True,
-    locals={
-        "d_position": numba.types.float64,
-        "d_rotation": numba.types.float64,
-    },
-)
-def se3_metric(point1, point2):
-    """Compute the distance between two workspace points in SE3.
-    Use as the metric for SE3 nearest neighbor searching.
-
-    Note: Input point must be numpy array
-    """
-    return se3_distance(point1, point2)
-
-
-@numba.jit(
-    nopython=True,
-    fastmath=True,
-    locals={
-        "d_position": numba.types.float64,
-        "d_rotation": numba.types.float64,
-    },
-)
-def se3_distance(point1, point2, position_weight=1.0, rotation_weight=0.3):
-    """Compute the distance between two workspace points, either R^3 or SE3.
-    Use numba for this function to speed up the computation.
-
-    Note: Input point must be numpy array
-    """
+def se3_distance(p1, p2, position_weight=1.0, rotation_weight=0.3):
+    """Compute the distance between two workspace SE3 points."""
     # Position component
     # position distance - euclidean
-    d_position = np.linalg.norm(point1[:3] - point2[:3])
+    d_position = math.hypot(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2])
 
-    # Rotation not included
-    if len(point1) <= 3:
-        return d_position
+    # Rotation component
+    # # rotation distance - arc length
+    # d_rotation = np.abs(np.dot(point1[3:7], point2[3:7]))
+    # if d_rotation > 1:
+    #     d_rotation = 1  # Clip to [0, 1] range
+    # d_rotation = 2 * np.arccos(d_rotation)
 
-    # Rotation included
-    else:
-        # # rotation distance - arc length
-        # d_rotation = np.abs(np.dot(point1[3:7], point2[3:7]))
-        # if d_rotation > 1:
-        #     d_rotation = 1  # Clip to [0, 1] range
-        # d_rotation = 2 * np.arccos(d_rotation)
+    # rotation distance - simplified
+    # d_rotation = 1 - np.abs(np.dot(point1[3:7], point2[3:7]))
+    d_rotation = 1 - abs(
+        p1[3] * p2[3] + p1[4] * p2[4] + p1[5] * p2[5] + p1[6] * p2[6]
+    )
 
-        # rotation distance - simplified
-        d_rotation = 1 - np.abs(np.dot(point1[3:7], point2[3:7]))
-
-        return position_weight * d_position + rotation_weight * d_rotation
+    return position_weight * d_position + rotation_weight * d_rotation
 
 
 def quaternion_angle(q1, q2):
@@ -68,6 +37,11 @@ def quaternion_angle(q1, q2):
     dist = np.min([np.abs(np.dot(q1, q2)), 1.0])  # prevent numerical error
     angle = 2 * np.arccos(dist)
     return angle
+
+
+def quaternion_close(q1, q2, eps=1e-3):
+    """Check if two quaternions are close to each other"""
+    return quaternion_angle(q1, q2) < eps
 
 
 def interpolate_quat(quat1, quat2, u):
@@ -251,7 +225,7 @@ def get_staggered_grid(n_points, domain):
     return np.array(points), np.array(edges)
 
 
-def get_so3_grid(n_points, domain, num_neighbors):
+def get_so3_grid(n_points, rot_domain, fixed_rotation, num_neighbors):
     """Get n_points in SO(3) points using uniform sampling (non-random)
 
     For one dimension, simply sample n_points in the range of [-pi, pi)
@@ -259,20 +233,24 @@ def get_so3_grid(n_points, domain, num_neighbors):
 
     Args:
         n_points: number of points to sample
-        domain: domain of the rotation to sample, unlike R^3,
-                the domain simply include 1 or 0, indicating
-                whether the rotation is allowed to rotate around
+        rot_domain: rot_domain of the rotation to sample, unlike R^3,
+                    the rot_domain simply include 1 or 0, indicating
+                    whether the rotation is allowed to rotate around
+        fixed_rotation: defined in euler angle form (x, y, z)
+                        the fixed rotation for the robot, when the rot_domain
+                        is not [1, 1, 1], the "0" part of the rotation would be
+                        assigned with the fixed rotation
         num_neighbors: number of neighbors for each point
     Returns:
         points: a list of workspace points (coordinates)
         edges: a list of edges in index form
     """
     # Keep a record of the domain that is constant
-    num_domian = np.sum(domain)
+    num_domian = np.sum(rot_domain)
 
     # None: no domain is specified, return None
     if num_domian == 0:
-        return None
+        raise ValueError("No domain is specified for rotation grid")
 
     # Only one angle:
     # simply sample uniformly from -pi to pi, make other angles 0,
@@ -283,8 +261,8 @@ def get_so3_grid(n_points, domain, num_neighbors):
         angles = np.linspace(-np.pi, np.pi, n_points, endpoint=False)
 
         # create the points with zero for other angles
-        eulers = np.zeros((n_points, 3))
-        index = domain.index(1)
+        eulers = np.tile(fixed_rotation, (n_points, 1))
+        index = rot_domain.index(1)
         eulers[:, index] = angles
         quats = [euler_to_quat(euler) for euler in eulers]
 
@@ -320,10 +298,10 @@ def get_so3_grid(n_points, domain, num_neighbors):
             quats.append(q)
 
     # Find the edges
-    # build a temp ball tree for even_quats
+    # build a temp NN structure for quats
     tree = BallTree(quats, metric=quaternion_angle)
     edges = []
-    # + 1 avoid self
+    # + 1 to accomodate self
     neighbors = tree.query(quats, num_neighbors + 1)[1][:, 1:]
     for i, neighbor in enumerate(neighbors):
         for j in neighbor:

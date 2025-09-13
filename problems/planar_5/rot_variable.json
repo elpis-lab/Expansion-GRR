@@ -2,6 +2,7 @@
     "robot_class": "KinematicChain",
     "domain": [[-0.5, 0.5], [-0.5, 0.5], [0.0, 0.0]],
     "rotation_domain": [0, 0, 1],
+    "fixed_rotation": [0, 0, 0],
     "number_of_position_points": 1000,
     "number_of_rotation_points": 8,
 
