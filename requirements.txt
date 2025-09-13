@@ -1,8 +1,4 @@
 klampt
-PyOpenGL
-PyQt5
 tqdm
 networkx
 scikit-learn
-fastdtw
-matplotlib
